@@ -26,7 +26,7 @@ import fi.nls.hakunapi.cql2.model.spatial.SpatialPredicate;
  * Just an example ExpressionVisitor
  * Probably not that useful
  */
-public class ExpressionToString implements ExpressionVisitor {
+public class ExpressionToString implements ExpressionVisitor<Object> {
 
     static final char CASEI_PREFIX = '@';
 

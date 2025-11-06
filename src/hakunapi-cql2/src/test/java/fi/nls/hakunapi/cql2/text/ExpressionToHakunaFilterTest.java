@@ -2,14 +2,14 @@ package fi.nls.hakunapi.cql2.text;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.locationtech.jts.algorithm.Centroid;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
-
-import java.util.List;
-import java.util.Optional;
 
 import fi.nls.hakunapi.core.SRIDCode;
 import fi.nls.hakunapi.core.filter.Filter;
@@ -24,7 +24,7 @@ import fi.nls.hakunapi.core.schemas.FunctionArgumentInfo.FunctionArgumentType;
 import fi.nls.hakunapi.core.schemas.FunctionReturnsInfo.FunctionReturnsType;
 import fi.nls.hakunapi.cql2.function.CQL2Functions;
 import fi.nls.hakunapi.cql2.function.Function;
-import fi.nls.hakunapi.cql2.function.FunctionTable;
+import fi.nls.hakunapi.cql2.function.FunctionTableImpl;
 import fi.nls.hakunapi.cql2.model.Expression;
 import fi.nls.hakunapi.cql2.model.ExpressionToHakunaFilter;
 import fi.nls.hakunapi.cql2.model.FilterContext;
@@ -33,7 +33,7 @@ public class ExpressionToHakunaFilterTest {
 
     @BeforeClass
     public static void init() {
-        Function<?> buffer = Function.of("buffer", (fn, args, ctx) -> {
+        Function<FilterContext> buffer = Function.<FilterContext>of("buffer", (fn, args, ctx) -> {
             Geometry g = (Geometry) args.get(0);
             double distance = ((Number) args.get(1)).doubleValue();
             return g.buffer(distance);
@@ -42,14 +42,16 @@ public class ExpressionToHakunaFilterTest {
         .argument("distance", FunctionArgumentType.number)
         .returns(FunctionReturnsType.geometry);
 
-        Function<?> centroid = Function.of("centroid", (fn, args, ctx) -> {
+        Function<FilterContext> centroid = Function.<FilterContext>of("centroid", (fn, args, ctx) -> {
             Geometry g = (Geometry) args.get(0);
             return g.getFactory().createPoint(Centroid.getCentroid(g));
         })
         .argument("geom", FunctionArgumentType.geometry)
         .returns(FunctionReturnsType.geometry);
 
-        CQL2Functions.INSTANCE.init(List.of(FunctionTable.of("geometryTests", buffer, centroid)));
+            
+        
+        CQL2Functions.INSTANCE.init(List.of(FunctionTableImpl.of("geometryTests", List.of(buffer, centroid))));
     }
 
     @Test

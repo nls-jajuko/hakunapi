@@ -10,27 +10,28 @@ import java.util.stream.Collectors;
 
 import fi.nls.hakunapi.core.schemas.FunctionInfo;
 import fi.nls.hakunapi.core.schemas.FunctionsContent;
+import fi.nls.hakunapi.cql2.model.FilterContext;
 
 public class CQL2Functions {
     public static final CQL2Functions INSTANCE = new CQL2Functions();
 
-    Map<String, FunctionTable> FUNCTION_TABLES = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    Map<String, FunctionTable<FilterContext>> FUNCTION_TABLES = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public void register() {
         init(FunctionTableProvider.getFunctionTables());
     }
 
-    public void init(List<FunctionTable> functionTables) {
+    public void init(List<FunctionTable<FilterContext>> functionTables) {
         functionTables.forEach(ft -> {
             FUNCTION_TABLES.put(ft.getPackageName(), ft);
         });
     }
 
-    public Map<String, FunctionTable> getFunctionTables() {
+    public Map<String, FunctionTable<FilterContext>> getFunctionTables() {
         return FUNCTION_TABLES;
     }
 
-    public Optional<Function> getAnyFunction(String functionName) {
+    public Optional<Function<FilterContext>> getAnyFunction(String functionName) {
         return FUNCTION_TABLES.entrySet().stream().map(entry -> entry.getValue().getFunction(functionName))
                 .filter(Objects::nonNull).findFirst();
     }
@@ -45,7 +46,7 @@ public class CQL2Functions {
 
     public FunctionsContent toFunctionsMetadata() {
 
-        final List<Function> functions = new ArrayList<>();
+        final List<Function<FilterContext>> functions = new ArrayList<>();
         FUNCTION_TABLES.entrySet().stream().filter(e -> !e.getValue().isHidden()).forEach(e -> {
             e.getValue().getFunctions(functions);
         });

@@ -4,25 +4,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class FunctionTableImpl implements FunctionTable {
+import fi.nls.hakunapi.cql2.model.FilterContext;
+
+public class FunctionTableImpl implements FunctionTable<FilterContext> {
 
     final String packageName;
-    final Map<String, Function> functions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    final Map<String, Function<FilterContext>> functions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     boolean hidden = false;
 
     @Override
-    public void getFunctions(List<Function> list) {
+    public void getFunctions(List<Function<FilterContext>> list) {
         list.addAll(functions.values());
     }
 
     @Override
     // [<packageName>_]<functionName>
-    public Function getFunction(String functionName) {
+    public Function<FilterContext> getFunction(String functionName) {
         return functions.get(functionName);
     }
 
-    public void putFunction(Function func) {
+    public void putFunction(Function<FilterContext> func) {
         functions.put(func.getName(), func);
     }
 
@@ -49,6 +51,14 @@ public class FunctionTableImpl implements FunctionTable {
         super();
         this.packageName = packageName;
         this.hidden = false;
+    }
+
+    public static FunctionTableImpl of(String packageName, List<Function<FilterContext>> functions) {
+
+        final FunctionTableImpl impl = new FunctionTableImpl(packageName);
+        functions.forEach(f -> impl.putFunction(f));
+        return impl;
+
     }
 
 }
