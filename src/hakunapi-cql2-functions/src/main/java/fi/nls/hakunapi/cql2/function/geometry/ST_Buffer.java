@@ -20,6 +20,8 @@ import fi.nls.hakunapi.cql2.model.FilterContext;
 public class ST_Buffer extends Function<FilterContext> {
 
     /*
+     * Proof-of-Concept ST_Buffer with some form of SRID specifics
+     * 
      * reference: http://postgis.net/docs/manual-3.2/ST_Buffer.html
      * ST_Buffer(geom,radius_of_buffer,num_seg_quarter_circle,
      * buffer_style_parameters )
@@ -47,33 +49,30 @@ public class ST_Buffer extends Function<FilterContext> {
         int endCapStyle = mapBufferStyleParameter(kv);
         int numSeq = mapNumSegQuarterCircleParameter(kv);
 
-        if (fContext != null && fContext.filterSrid().isDegrees()) {
-            int filterSrid = fContext.filterSrid().getSrid();
-            SRIDCode storageSrid = fContext.storageSrid().orElseThrow();
-            int viaSrid = !storageSrid.isDegrees() ? storageSrid.getSrid() : 3857;
-            Geometry geom = givenGeom.copy();
-            try {
-                ProjectionTransformer fromFiltertoVia = fContext.projectionTransformer().orElseThrow()
-                        .getTransformer(filterSrid, viaSrid);
-                ProjectionTransformer fromViaToFilter = fContext.projectionTransformer().orElseThrow()
-                        .getTransformer(viaSrid, filterSrid);
-
-                Geometry geomJTS = ProjectionHelper.reproject(geom, fromFiltertoVia);
-
-                geomJTS = BufferOp.bufferOp(geomJTS, radius_of_buffer, numSeq, endCapStyle);
-
-//                double area = geomJTS.getArea();
-
-                geomJTS = ProjectionHelper.reproject(geomJTS, fromViaToFilter);
-
-                return geomJTS;
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        if (fContext == null || !fContext.filterSrid().isDegrees()) {
+            return givenGeom.buffer(radius_of_buffer, numSeq, endCapStyle);
         }
 
-        return givenGeom.buffer(radius_of_buffer, numSeq, endCapStyle);
+        int filterSrid = fContext.filterSrid().getSrid();
+        SRIDCode storageSrid = fContext.storageSrid().orElseThrow();
+        int viaSrid = !storageSrid.isDegrees() ? storageSrid.getSrid() : 3857;
+        Geometry geom = givenGeom.copy();
+        try {
+            ProjectionTransformer fromFiltertoVia = fContext.projectionTransformer().orElseThrow()
+                    .getTransformer(filterSrid, viaSrid);
+            ProjectionTransformer fromViaToFilter = fContext.projectionTransformer().orElseThrow()
+                    .getTransformer(viaSrid, filterSrid);
+
+            Geometry geomJTS = ProjectionHelper.reproject(geom, fromFiltertoVia);
+            geomJTS = BufferOp.bufferOp(geomJTS, radius_of_buffer, numSeq, endCapStyle);
+            geomJTS = ProjectionHelper.reproject(geomJTS, fromViaToFilter);
+
+            return geomJTS;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private int mapBufferStyleParameter(final Map<String, String> kv) {
